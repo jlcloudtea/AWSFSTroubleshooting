@@ -1,0 +1,196 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: This template creates an autoscaling group with EC2 instances in a VPC with 2 public subnets. The instances have an apache web server installed.
+
+# This template creates:
+#   VPC
+#   Internet Gateway
+#   Public Route Table
+#   Public Subnet
+#   Security Group
+#   EC2
+#   AutoScaling
+
+######################
+# Parameters section
+######################
+
+
+Parameters:
+  LaunchTemplateVersionNumber:
+    Default: 1
+    Type: String
+
+  KeyName:
+    Description: The EC2 Key Pair to allow SSH access to the instances
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    Default: vockey
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+
+  SSHLocation:
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+    Default: 0.0.0.0/0
+    Description: The IP address range that can be used to access the web server using SSH.
+    MaxLength: '18'
+    MinLength: '9'
+    Type: String
+
+    
+######################
+# Resources section
+######################
+    
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: TroubleshootingVPC
+      
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: TroubleshootingGW
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: 10.0.0.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: TR Public Subnet 1
+      VpcId: !Ref VPC
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: TR Public Subnet 2
+      VpcId: !Ref VPC
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Key: Name
+          Value: TR PublicRouteTable
+      VpcId: !Ref VPC
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      DestinationCidrBlock: 10.1.0.0/16
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet1
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet2
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Open HTTP (port 80) and SSH (port 22)
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref SSHLocation
+      Tags:
+        - Key: Name
+          Value: SG-Troubleshooting
+
+  LaunchTemplate:
+    Type: 'AWS::EC2::LaunchTemplate'
+    Properties:
+      LaunchTemplateName: !Sub '${AWS::StackName}-launch-for-troubleshooting'
+      LaunchTemplateData:
+        NetworkInterfaces:
+          - DeviceIndex: 0
+            AssociatePublicIpAddress: true
+            Groups:
+              - !Ref InstanceSecurityGroup
+            DeleteOnTermination: true
+        Placement:
+          Tenancy: default
+        ImageId: ami-0aa7d40eeae50c9a9
+        KeyName: !Ref KeyName
+        InstanceType: t2.micro
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+            - Key: Name
+              Value: Troubleshooting-server
+        UserData:
+          Fn::Base64:
+            !Sub |
+              #!/bin/bash
+              yum update -y
+              yum install httpd php mysql php-mysql -y
+              amazon-linux-extras install -y lamp-mariadb10.2-php7.2 php7.2
+              yum install -y httpd mariadb-server
+              systemctl start httpd
+              systemctl enable httpd
+              cd /var/www/html
+              wget https://aws-tc-largeobjects.s3.amazonaws.com/CUR-TF-100-ACCLFO-2/lab5-rds/lab-app-php7.zip
+              unzip lab-app-php7.zip -d /var/www/html/
+              chown apache:root /var/www/html/rds.conf.php
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      MinSize: '1'
+      MaxSize: '1'
+      DesiredCapacity: '1'
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !Ref LaunchTemplateVersionNumber
+      VPCZoneIdentifier:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+
+        
+######################
+# Outputs section
+######################
+        
+Outputs:
+  VPC:
+    Description: The ID of the VPC
+    Value: !Ref VPC
+    Export:
+      Name: !Sub "${AWS::StackName}-VPCID"
