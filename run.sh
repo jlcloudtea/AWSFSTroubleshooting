@@ -8,13 +8,17 @@ do
 	"Create Troubleshooting Stack")
 	  echo "you chose choice 1"
 	  echo '-------------------------------------------------------------'
-	  echo ' 	Please wait 2-5 mins until new prompt message...         '
+	  echo ' 	Please wait 2-5 mins until new prompt message...     '
 	  echo '-------------------------------------------------------------'
 	  aws cloudformation create-stack --stack-name troubleshoot --template-body "file://TroubleshootingCLD401.yml" >/dev/null 2>&1
 	  aws cloudformation wait stack-create-complete --stack-name troubleshoot
 	  echo '-------------------------------------------------------------'
-	  echo '	Setup Completed You can start the troubleshooting       '
+	  echo '	Setup Completed You can start the troubleshooting    '
 	  echo '-------------------------------------------------------------'
+      	  TRtable=$(aws ec2 describe-route-tables --filters "Name=tag:Name,Values=TR PublicRouteTable" "Name=vpc-id,Values=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=TroubleshootingVPC" --query "Vpcs[0].VpcId" --output text)" --query "RouteTables[0].RouteTableId" --output text)
+	  TRgw=$(aws ec2 describe-internet-gateways --filters "Name=tag:Name,Values=TroubleshootingGW" --query "InternetGateways[0].InternetGatewayId" --output text)
+	  aws ec2 delete-route --route-table-id $TRtable --destination-cidr-block 0.0.0.0/0 >/dev/null 2>&1
+	  aws ec2 create-route --route-table-id $TRtable --destination-cidr-block 10.0.1.0/16 --gateway-id $TRgw >/dev/null 2>&1
 	  echo "Below are the related information for your reference"
 	  aws cloudformation describe-stacks --stack-name troubleshoot --query "Stacks[*].Outputs[*].{OutputKey: OutputKey, OutputValue: OutputValue, Description: Description}" --output table
 	  aws ec2 describe-instances --filter "Name=tag:Name,Values=Troubleshooting-server" --filters "Name=instance-state-name,Values=running" --query "Reservations[].Instances[].{InstanceId:InstanceId, PrivateIpAddress:PrivateIpAddress, PublicIpAddress:PublicIpAddress}" --output table
@@ -23,7 +27,7 @@ do
 	"Delete Troubleshooting Stack")
 	  aws cloudformation delete-stack --stack-name troubleshoot
 	  echo '-------------------------------------------------------------'
-	  echo '	Deleting Troubleshooting Stack may takes 2-5 mins 	   '
+	  echo '	Deleting Troubleshooting Stack may takes 2-5 mins    '
 	  echo '-------------------------------------------------------------'
 	  break
 	  ;;
