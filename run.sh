@@ -16,7 +16,7 @@ do
 	  TRtable=$(aws ec2 describe-route-tables --filters "Name=tag:Name,Values=TR PublicRouteTable" "Name=vpc-id,Values=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=TroubleshootingVPC" --query "Vpcs[0].VpcId" --output text)" --query "RouteTables[0].RouteTableId" --output text)
 	  TRgw=$(aws ec2 describe-internet-gateways --filters "Name=tag:Name,Values=TroubleshootingGW" --query "InternetGateways[0].InternetGatewayId" --output text)
 	  aws ec2 delete-route --route-table-id $TRtable --destination-cidr-block 0.0.0.0/0 >/dev/null 2>&1
-	  aws ec2 create-route --route-table-id $TRtable --destination-cidr-block 10.10.0.0/16 --gateway-id $TRgw >/dev/null 2>&1
+	  aws ec2 create-route --route-table-id $TRtable --destination-cidr-block 10.1.0.0/16 --gateway-id $TRgw >/dev/null 2>&1
    	  echo '-------------------------------------------------------------'
 	  echo '	Setup Completed You can start the troubleshooting    '
 	  echo '-------------------------------------------------------------'
