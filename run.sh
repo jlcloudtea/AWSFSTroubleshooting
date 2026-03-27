@@ -22,7 +22,7 @@ do
 	  echo '-------------------------------------------------------------'
 	  echo "Below is the related information for your reference"
 	  aws cloudformation describe-stacks --stack-name troubleshoot --query "Stacks[*].Outputs[*].{OutputKey: OutputKey, OutputValue: OutputValue, Description: Description}" --output table
-	  aws ec2 describe-instances --filter "Name=tag:Name,Values=Troubleshooting-server" --filters "Name=instance-state-name,Values=running" --query "Reservations[].Instances[].{InstanceId:InstanceId, PrivateIpAddress:PrivateIpAddress, PublicIpAddress:PublicIpAddress}" --output table
+	  aws ec2 describe-instances --filters "Name=tag:Name,Values=Troubleshooting-server" "Name=instance-state-name,Values=running" --query "Reservations[].Instances[].{InstanceId:InstanceId, PrivateIpAddress:PrivateIpAddress, PublicIpAddress:PublicIpAddress}" --output table
 	  break
 	  ;;
 	"Delete Troubleshooting Stack")
