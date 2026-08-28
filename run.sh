@@ -83,7 +83,8 @@ do
         --template-body "file://$TEMPLATE_FILE" \
         --parameters \
           ParameterKey=AvailabilityZone1,ParameterValue="$AZ1" \
-          ParameterKey=AvailabilityZone2,ParameterValue="$AZ2"
+          ParameterKey=AvailabilityZone2,ParameterValue="$AZ2" \
+        >/dev/null
       then
         echo
         echo "ERROR: Unable to start CloudFormation stack creation."
@@ -176,7 +177,8 @@ do
       aws ec2 create-route \
         --route-table-id "$TRtable" \
         --destination-cidr-block 10.1.0.0/16 \
-        --gateway-id "$TRgw"
+        --gateway-id "$TRgw" \
+      >/dev/null
 
       echo
       echo '-------------------------------------------------------------'
