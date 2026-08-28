@@ -17,6 +17,14 @@ Description: This template creates an autoscaling group with EC2 instances in a 
 
 
 Parameters:
+  AvailabilityZone1:
+    Description: Availability Zone for Public Subnet 1
+    Type: AWS::EC2::AvailabilityZone::Name
+
+  AvailabilityZone2:
+    Description: Availability Zone for Public Subnet 2
+    Type: AWS::EC2::AvailabilityZone::Name
+    
   LaunchTemplateVersionNumber:
     Default: 1
     Type: String
@@ -69,7 +77,7 @@ Resources:
   PublicSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      AvailabilityZone: !Ref AvailabilityZone1
       CidrBlock: 10.0.0.0/24
       MapPublicIpOnLaunch: true
       Tags:
@@ -80,7 +88,7 @@ Resources:
   PublicSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      AvailabilityZone: !Ref AvailabilityZone2
       CidrBlock: 10.0.1.0/24
       MapPublicIpOnLaunch: true
       Tags:
