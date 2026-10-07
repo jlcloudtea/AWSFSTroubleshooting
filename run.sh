@@ -142,6 +142,7 @@ do
         --parameters \
           ParameterKey=AvailabilityZone1,ParameterValue="$AZ1" \
           ParameterKey=AvailabilityZone2,ParameterValue="$AZ2" \
+          ParameterKey=ValidationInstanceProfileArn,ParameterValue="${VALIDATION_INSTANCE_PROFILE_ARN:-}" \
         >/dev/null
       then
 
