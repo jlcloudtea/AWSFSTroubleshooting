@@ -317,7 +317,7 @@ Resources:
                 cat >/etc/httpd/conf.d/troubleshooting-validation.conf <<'APACHE'
               ProxyPass /validation/ http://127.0.0.1:8765/validation/
               ProxyPassReverse /validation/ http://127.0.0.1:8765/validation/
-              ProxyPassMatch ^/validation$ http://127.0.0.1:8765/validation/
+              RedirectMatch 302 ^/validation$ /validation/
               APACHE
                 systemctl daemon-reload
                 systemctl enable --now troubleshooting-validator || true
