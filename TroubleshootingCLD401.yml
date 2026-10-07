@@ -290,9 +290,7 @@ Resources:
               # Learner Lab must provide an existing EC2 instance profile with Describe permissions.
               # Failures here do not mask the deliberately configured troubleshooting faults.
               mkdir -p /opt/troubleshooting
-              if curl -fsSL --max-time 30 \\
-                https://raw.githubusercontent.com/jlcloudtea/AWSFSTroubleshooting/feature/self-validation-v1/validator/validator.py \\
-                -o /opt/troubleshooting/validator.py; then
+              if curl -fsSL --max-time 30 -o /opt/troubleshooting/validator.py https://raw.githubusercontent.com/jlcloudtea/AWSFSTroubleshooting/feature/self-validation-v1/validator/validator.py; then
                 yum install -y python3 python3-pip || true
                 python3 -m pip install boto3 || true
                 cat >/etc/systemd/system/troubleshooting-validator.service <<'UNIT'
