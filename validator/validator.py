@@ -3,6 +3,7 @@
 Never accepts AWS resource identifiers or AWS actions from HTTP requests.
 """
 import json
+from datetime import datetime, timezone
 import os
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -76,7 +77,10 @@ def verify():
         groups = asc.describe_auto_scaling_groups(AutoScalingGroupNames=[ASG_NAME])["AutoScalingGroups"]
         if groups:
             group = groups[0]
-            outcomes[2] = (group["MinSize"],group["DesiredCapacity"],group["MaxSize"]) == (1,2,3)
+            # Scheduled scale-up legitimately changes live capacity 09:00-11:00 UTC.
+            hour = datetime.now(timezone.utc).hour
+            expected = (2,3,4) if 9 <= hour < 11 else (1,2,3)
+            outcomes[2] = (group["MinSize"],group["DesiredCapacity"],group["MaxSize"]) == expected
         actions = asc.describe_scheduled_actions(AutoScalingGroupName=ASG_NAME).get("ScheduledUpdateGroupActions", [])
         outcomes[3] = any(schedule_matches(a,0,9,2,3,4) for a in actions)
         outcomes[4] = any(schedule_matches(a,0,11,1,2,3) for a in actions)
