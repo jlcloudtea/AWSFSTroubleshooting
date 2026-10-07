@@ -33,7 +33,7 @@ A new optional CloudFormation parameter `ValidationInstanceProfileArn` accepts t
 
 Learner Lab may restrict attaching instance profiles or `iam:PassRole`. **Do not broaden policies to circumvent lab restrictions.** Ask the account administrator to provide and approve an instance profile. Without it, the site may load but AWS checks show Fail; this is an **unavailable validation** rather than evidence that the student failed. Avoid deploying to students until this prerequisite is confirmed.
 
-Run the stack with an approved profile by supplying CloudFormation parameter `ValidationInstanceProfileArn` (e.g., adapt `run.sh` to pass it in the create-stack parameters). The existing `run.sh` currently does not pass this parameter, so by default the new feature is **demonstration-only**. The stack retains normal provisioning without it.
+Run the stack with an approved profile by setting `export VALIDATION_INSTANCE_PROFILE_ARN=arn:aws:iam::<account-id>:instance-profile/<approved-profile-name>` before `bash run.sh`. The updated `run.sh` passes this parameter from the `VALIDATION_INSTANCE_PROFILE_ARN` environment variable, which defaults to empty. Without an approved profile, the new feature is **demonstration-only**. The stack retains normal provisioning without it.
 
 ## Deployment implementation
 
