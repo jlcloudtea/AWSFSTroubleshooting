@@ -65,6 +65,7 @@ def main():
         return 2
 
     public_ip = None
+    report_path = None
     try:
         routes = aws("ec2", "describe-route-tables", "--route-table-ids", route_table)
         route = next((r for r in routes["RouteTables"][0]["Routes"]
@@ -133,7 +134,21 @@ def main():
             with urllib.request.urlopen(f"http://{public_ip}/", timeout=5) as response:
                 reachable = 200 <= response.status < 400
                 status = response.status
+                homepage = response.read(65536).decode("utf-8", errors="replace")
             record("Public HTTP response", reachable, f"http://{public_ip}/ returned HTTP {status}")
+            if reachable:
+                if 'id="summary"' in homepage:
+                    report_path = "/"
+                else:
+                    try:
+                        with urllib.request.urlopen(
+                            f"http://{public_ip}/verification.html", timeout=5
+                        ) as response:
+                            alternate = response.read(65536).decode("utf-8", errors="replace")
+                            if 200 <= response.status < 400 and 'id="summary"' in alternate:
+                                report_path = "/verification.html"
+                    except (urllib.error.URLError, TimeoutError, OSError):
+                        pass
         except (urllib.error.URLError, TimeoutError, OSError) as error:
             record("Public HTTP response", False, f"Could not load http://{public_ip}/: {error}")
     else:
@@ -141,7 +156,7 @@ def main():
 
     passed = sum(r["passed"] for r in results)
     print(f"\nResult: {passed}/{len(results)} checks passed.")
-    if public_ip:
+    if public_ip and report_path:
         payload = {"version": 1, "stack": STACK, "region": REGION,
                    "checkedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
                    "results": results}
@@ -149,8 +164,10 @@ def main():
             json.dumps(payload, separators=(",", ":")).encode()
         ).decode().rstrip("=")
         print("\nOpen the web page with this report link after HTTP access works:")
-        print(f"http://{public_ip}/#{token}")
+        print(f"http://{public_ip}{report_path}#{token}")
         print("This is feedback for practice, not a tamper-proof grading record.")
+    elif public_ip:
+        print("\nThe web server responded, but no verification page was found on this instance.")
     return 0 if passed == len(results) else 1
 
 
