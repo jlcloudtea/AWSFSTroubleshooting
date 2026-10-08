@@ -5,71 +5,112 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Erfys Confectionary · Troubleshooting lab</title>
   <style>
-    :root { font: 16px/1.5 system-ui, sans-serif; color: #17233a; background: #f3f6fb; }
-    main { max-width: 760px; margin: 5vh auto; padding: 1rem; }
-    h1 { font-size: 2rem; margin-bottom: .3rem; }
-    .card { background: white; border-radius: 14px; padding: 1.4rem; box-shadow: 0 5px 25px #15274713; }
-    #summary { font-size: 1.35rem; font-weight: 700; padding: .8rem 1rem; border-radius: 9px; }
+    :root { font: 16px/1.5 system-ui, sans-serif; color: #18283d; background: #f3f6fb; }
+    * { box-sizing: border-box; }
+    main { max-width: 760px; margin: 4vh auto; padding: 1rem; }
+    h1 { margin: 0; font-size: clamp(1.8rem, 5vw, 2.4rem); }
+    .subtitle { margin: .3rem 0 1.4rem; color: #53647a; }
+    .card { background: #fff; border-radius: 14px; padding: clamp(1rem, 3vw, 1.6rem); box-shadow: 0 5px 25px #15274713; }
+    .online { color: #157347; font-weight: 650; margin: 0 0 1rem; }
+    h2 { font-size: 1.2rem; margin: 0 0 .8rem; }
+    #summary { font-size: 1.25rem; font-weight: 750; padding: .85rem 1rem; border-radius: 9px; }
     .success { background: #e2f7e9; color: #136a37; }
     .pending { background: #fff1d6; color: #795117; }
-    ul { list-style: none; padding: 0; }
-    li { border-top: 1px solid #dce3ed; padding: .8rem 0; }
+    .meta { color: #53647a; font-size: .9rem; }
+    ol { list-style: none; padding: 0; margin: .8rem 0; }
+    li { display: flex; gap: .8rem; border-top: 1px solid #dce3ed; padding: .85rem 0; }
+    .icon { font-size: 1.25rem; min-width: 1.4rem; }
+    .pass { color: #157347; } .review { color: #a56513; }
     strong { display: block; }
-    .pass { color: #157347; } .fail { color: #b33136; }
-    small { color: #546477; }
+    .hint { display: block; color: #53647a; font-size: .94rem; margin-top: .2rem; }
     code { background: #eaf0f7; padding: .15rem .35rem; border-radius: 4px; }
+    footer { color: #53647a; font-size: .83rem; margin-top: 1.4rem; }
   </style>
 </head>
 <body>
   <main>
     <h1>Erfys Confectionary</h1>
-    <p>AWS Cloud Fundamentals · Troubleshooting lab</p>
-    <div class="card">
-      <p class="pass"><strong>Web server reachable over HTTP</strong></p>
-      <h2>Assessment verification</h2>
-      <div id="summary" class="pending">No verification report yet</div>
-      <p id="time">Run <code>python3 verify.py</code> in the Learner Lab terminal, then open the report link it prints.</p>
-      <ul id="checks"></ul>
-      <small>This page displays the report produced by the terminal. It does not query AWS or serve as a secure grading record.</small>
-    </div>
+    <p class="subtitle">AWS Cloud Fundamentals · Troubleshooting lab</p>
+    <section class="card" aria-labelledby="report-title">
+      <p class="online">✓ Web server reachable over HTTP</p>
+      <h2 id="report-title">Assessment verification</h2>
+      <div id="summary" class="pending" role="status">No verification report yet</div>
+      <p id="meta" class="meta">Run <code>bash run.sh</code> and choose 4) Verify (trial), then open its report link.</p>
+      <ol id="checks"></ol>
+      <footer>
+        After opening a report link once, this browser keeps the last result when you refresh this page.
+        Run Verify again and open the new link to update it. This is practice feedback, not a grading record.
+      </footer>
+    </section>
   </main>
   <script>
+    const items = [
+      ["route", "Problem 1-1: Route table", "Review the public network path and try again."],
+      ["security", "Problem 1-2: Security group", "Review web access settings and try again."],
+      ["capacity", "Problem 2-1: Autoscaling options", "Compare the group settings with the task requirements."],
+      ["schedule", "Problem 2-2: Schedule Policy", "Review the timing and capacity requirements."]
+    ];
+    const storageKey = "erfys-troubleshooting-report-v2";
+
+    function decode(token) {
+      if (!/^[A-Za-z0-9_-]+$/.test(token) || token.length > 16000) throw Error("Invalid link");
+      const raw = atob(token.replace(/-/g, "+").replace(/_/g, "/"));
+      const bytes = Uint8Array.from(raw, ch => ch.charCodeAt(0));
+      const report = JSON.parse(new TextDecoder().decode(bytes));
+      if (report.version !== 2 || !Array.isArray(report.results) || report.results.length !== 4 ||
+          items.some(([id], index) => report.results[index].id !== id ||
+            typeof report.results[index].passed !== "boolean") ||
+          typeof report.checkedAt !== "string") throw Error("Invalid report");
+      return report;
+    }
+
     function render() {
       const summary = document.getElementById("summary");
-      const time = document.getElementById("time");
+      const meta = document.getElementById("meta");
       const checks = document.getElementById("checks");
       checks.replaceChildren();
-      if (!location.hash.slice(1)) return;
+      let token = location.hash.slice(1);
+      if (!token) {
+        try { token = localStorage.getItem(storageKey) || ""; } catch (_) {}
+      }
+      if (!token) return;
       try {
-        const token = location.hash.slice(1);
-        if (!/^[A-Za-z0-9_-]+$/.test(token) || token.length > 16000) throw Error("Invalid link");
-        const raw = atob(token.replace(/-/g, "+").replace(/_/g, "/"));
-        const bytes = Uint8Array.from(raw, ch => ch.charCodeAt(0));
-        const report = JSON.parse(new TextDecoder().decode(bytes));
-        if (report.version !== 1 || !Array.isArray(report.results) ||
-            report.results.length !== 5 || report.results.some(
-              item => typeof item.label !== "string" ||
-                typeof item.passed !== "boolean" || typeof item.detail !== "string"
-            )) throw Error("Invalid report");
-        const total = report.results.filter(item => item.passed).length;
-        summary.className = total === 5 ? "success" : "pending";
-        summary.textContent = total === 5 ? "All 5 checks passed" : total + "/5 checks passed";
-        time.textContent = "Stack: " + report.stack + " · Region: " + report.region +
-          " · Checked: " + new Date(report.checkedAt).toLocaleString();
-        for (const item of report.results) {
+        const report = decode(token);
+        if (location.hash) {
+          try { localStorage.setItem(storageKey, token); } catch (_) {}
+        }
+        const passed = report.results.filter(item => item.passed).length;
+        summary.className = passed === 4 ? "success" : "pending";
+        summary.textContent = passed === 4
+          ? "Good Job. All 4 problems are resolved."
+          : passed + "/4 complete. Review the items below.";
+        const when = new Date(report.checkedAt);
+        meta.textContent = "Last checked: " + (Number.isNaN(when.getTime()) ? report.checkedAt : when.toLocaleString());
+        for (let i = 0; i < items.length; i++) {
+          const [id, label, hint] = items[i];
+          const ok = report.results[i].passed;
           const row = document.createElement("li");
+          const icon = document.createElement("span");
+          icon.className = "icon " + (ok ? "pass" : "review");
+          icon.textContent = ok ? "✓" : "○";
+          icon.setAttribute("aria-hidden", "true");
+          const body = document.createElement("div");
           const heading = document.createElement("strong");
-          heading.className = item.passed ? "pass" : "fail";
-          heading.textContent = (item.passed ? "✓ " : "✗ ") + item.label;
-          const detail = document.createElement("span");
-          detail.textContent = item.detail;
-          row.append(heading, detail);
+          heading.textContent = label + (ok ? " · Complete" : " · Check again");
+          body.append(heading);
+          if (!ok) {
+            const advice = document.createElement("span");
+            advice.className = "hint";
+            advice.textContent = hint;
+            body.append(advice);
+          }
+          row.append(icon, body);
           checks.append(row);
         }
       } catch (_) {
         summary.className = "pending";
         summary.textContent = "This report link is invalid";
-        time.textContent = "Run python3 verify.py again and use its complete link.";
+        meta.textContent = "Run Verify again and open the complete new link.";
       }
     }
     render();
