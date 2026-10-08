@@ -3,8 +3,6 @@
 STACK_NAME="troubleshoot"
 TEMPLATE_FILE="TroubleshootingCLD401.yml"
 REQUIRED_REGION="us-east-1"
-SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-REPORT_TOKEN_FILE="$HOME/.troubleshoot-report-token"
 
 PS3='Please enter your choice or press 3 to quit: '
 
@@ -138,12 +136,6 @@ do
       echo "This can take several minutes."
       echo
 
-      # A per-stack upload token lets option 4 publish practice reports to EC2.
-      # It is not used for AWS API access.
-      umask 077
-      REPORT_TOKEN=$(python3 -c 'import secrets; print(secrets.token_hex(32))')
-      printf '%s' "$REPORT_TOKEN" > "$REPORT_TOKEN_FILE"
-
 
       if ! aws cloudformation create-stack \
         --stack-name "$STACK_NAME" \
@@ -151,7 +143,6 @@ do
         --parameters \
           ParameterKey=AvailabilityZone1,ParameterValue="$AZ1" \
           ParameterKey=AvailabilityZone2,ParameterValue="$AZ2" \
-          ParameterKey=ReportToken,ParameterValue="$REPORT_TOKEN" \
         >/dev/null
       then
 
@@ -422,8 +413,6 @@ do
       if aws cloudformation wait stack-delete-complete \
         --stack-name "$STACK_NAME"
       then
-
-        rm -f "$REPORT_TOKEN_FILE"
 
         echo "-------------------------------------------------------------"
         echo " Troubleshooting Environment Deleted"
