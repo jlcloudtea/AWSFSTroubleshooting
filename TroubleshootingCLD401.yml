@@ -181,7 +181,7 @@ Resources:
 
         KeyName: !Ref KeyName
 
-        InstanceType: t2.micro
+        InstanceType: t3.micro
 
         TagSpecifications:
           - ResourceType: instance
