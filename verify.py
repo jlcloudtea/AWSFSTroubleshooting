@@ -155,24 +155,18 @@ def main():
 
     checks = [
         {"id": "route", "label": "Problem 1-1: Route table",
-         "passed": results[0]["passed"],
-         "hint": "Review the public network path and try again."},
+         "passed": results[0]["passed"]},
         {"id": "security", "label": "Problem 1-2: Security group",
-         "passed": results[1]["passed"] and results[4]["passed"],
-         "hint": "Review web access settings and try again."},
+         "passed": results[1]["passed"] and results[4]["passed"]},
         {"id": "capacity", "label": "Problem 2-1: Autoscaling options",
-         "passed": results[3]["passed"],
-         "hint": "Compare the group settings with the task requirements."},
+         "passed": results[3]["passed"]},
         {"id": "schedule", "label": "Problem 2-2: Schedule Policy",
-         "passed": results[2]["passed"],
-         "hint": "Review the timing and capacity requirements."},
+         "passed": results[2]["passed"]},
     ]
     passed = sum(item["passed"] for item in checks)
     for item in checks:
-        print(f"{'PASS' if item['passed'] else 'CHECK'}  {item['label']}")
-        if not item["passed"]:
-            print(f"       {item['hint']}")
-    print(f"\n{'Good Job.' if passed == 4 else 'Keep going. Review the items marked CHECK.'}")
+        print(f"{'PASS' if item['passed'] else 'NOT SUCCESS'}  {item['label']}")
+    print(f"\n{'Good Job.' if passed == 4 else 'Not all problems are successful yet.'}")
     print(f"Result: {passed}/4")
     if public_ip and report_path:
         payload = {"version": 2, "stack": STACK, "region": REGION,
