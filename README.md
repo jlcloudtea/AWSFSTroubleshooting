@@ -12,9 +12,9 @@ cd TRscript
 bash run.sh
 ```
 
-Choose **1** to create the environment. The menu and startup commands have not changed. Once creation completes, troubleshoot the environment in the AWS console.
+Choose **1** to create the environment. The startup commands and the original menu numbers 1–3 remain the same. Once creation completes, troubleshoot the environment in the AWS console.
 
-The EC2 instance serves a static assessment page at its public HTTP address. You can see the page once the route and security group have been repaired. To check the full solution and generate a report link, run from `TRscript`:
+The EC2 instance serves a static assessment page at its public HTTP address. You can see the page once the route and security group have been repaired. To check the full solution and generate a report link, run `bash run.sh` again and choose **4) Verify (trial)**. The direct command still works:
 
 ```bash
 python3 verify.py
