@@ -108,11 +108,16 @@ def main():
             hour = dt.datetime.now(ZoneInfo(zone)).hour
         except (KeyError, ValueError):
             hour = dt.datetime.now(dt.timezone.utc).hour
-        expected = (2, 3, 4) if same_zone and 9 <= hour < 11 else (1, 2, 3)
+        # A schedule corrected after 09:00 will not retroactively run today.
+        # During the window, accept either the repaired baseline or the active capacity.
+        expected = {(1, 2, 3)}
+        if same_zone and 9 <= hour < 11:
+            expected.add((2, 3, 4))
         actual = (group["MinSize"], group["DesiredCapacity"], group["MaxSize"])
-        record("Auto Scaling capacity", actual == expected,
+        expected_text = " or ".join("/".join(map(str, size)) for size in sorted(expected))
+        record("Auto Scaling capacity", actual in expected,
                f"Current min/desired/max: {actual[0]}/{actual[1]}/{actual[2]}; "
-               f"expected {expected[0]}/{expected[1]}/{expected[2]}")
+               f"expected {expected_text}")
 
         instance_ids = [i["InstanceId"] for i in group["Instances"]
                         if i.get("LifecycleState") == "InService"]
