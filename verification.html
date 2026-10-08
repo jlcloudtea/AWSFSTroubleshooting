@@ -82,7 +82,7 @@
         summary.className = passed === 4 ? "success" : "pending";
         summary.textContent = passed === 4
           ? "Good Job. All 4 problems are resolved."
-          : passed + "/4 successful.";
+          : "NOT SUCCESS";
         const when = new Date(report.checkedAt);
         meta.textContent = "Last checked: " + (Number.isNaN(when.getTime()) ? report.checkedAt : when.toLocaleString());
         for (let i = 0; i < items.length; i++) {
