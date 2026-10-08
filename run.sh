@@ -10,6 +10,7 @@ options=(
   "Create Troubleshooting Stack"
   "Delete Troubleshooting Stack"
   "Quit"
+  "Verify (trial)"
 )
 
 select opt in "${options[@]}"
@@ -446,6 +447,16 @@ do
       echo "Exiting."
       break
       ;;
+
+    "Verify (trial)")
+
+      echo
+      echo "Checking the troubleshooting environment..."
+      SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+      python3 "$SCRIPT_DIR/verify.py"
+      exit $?
+      ;;
+
 
 
     *)
