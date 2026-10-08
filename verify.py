@@ -4,6 +4,7 @@
 import base64
 import datetime as dt
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -175,7 +176,7 @@ def main():
                    "results": [{"id": item["id"], "passed": item["passed"]}
                                for item in checks]}
         if report_path == "/":
-            token_file = Path(__file__).resolve().parent / ".report-token"
+            token_file = Path(os.path.expanduser("~/.troubleshoot-report-token"))
             if token_file.is_file():
                 try:
                     request = urllib.request.Request(
