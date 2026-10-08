@@ -166,7 +166,7 @@ def main():
     passed = sum(item["passed"] for item in checks)
     for item in checks:
         print(f"{'PASS' if item['passed'] else 'NOT SUCCESS'}  {item['label']}")
-    print(f"\n{'Good Job.' if passed == 4 else 'Not all problems are successful yet.'}")
+    print(f"\n{'Good Job.' if passed == 4 else 'NOT SUCCESS'}")
     print(f"Result: {passed}/4")
     if public_ip and report_path:
         payload = {"version": 2, "stack": STACK, "region": REGION,
