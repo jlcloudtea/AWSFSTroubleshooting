@@ -95,13 +95,14 @@ def main():
                         "--auto-scaling-group-name", asg_name)["ScheduledUpdateGroupActions"]
         morning = [a for a in scheduled if schedule_matches(a, 9, (2, 3, 4))]
         evening = [a for a in scheduled if schedule_matches(a, 11, (1, 2, 3))]
-        same_zone = bool(morning and evening and
+        # Additional actions could override a correct pair later in the day.
+        same_zone = bool(len(scheduled) == 2 and len(morning) == 1 and len(evening) == 1 and
                          (morning[0].get("TimeZone") or "UTC") ==
                          (evening[0].get("TimeZone") or "UTC"))
         zone = (morning[0].get("TimeZone") or "UTC") if same_zone else "UTC"
         record("Daily 09:00–11:00 schedule", same_zone,
                f"09:00 → 2/3/4 and 11:00 → 1/2/3 ({zone}); no end dates" if same_zone
-               else "Expected two daily actions at 09:00 and 11:00 with the same time zone and no end dates")
+               else "Expected exactly two daily actions at 09:00 and 11:00 with the same time zone and no end dates")
 
         try:
             hour = dt.datetime.now(ZoneInfo(zone)).hour
@@ -186,7 +187,7 @@ def main():
         ).decode().rstrip("=")
         print("\nOpen the web page with this report link after HTTP access works:")
         print(f"http://{public_ip}{report_path}#{token}")
-        print("This is feedback for practice, not a tamper-proof grading record.")
+        print("This is feedback on your current work, not a grading record.")
     elif public_ip:
         print("\nThe web server responded, but no verification page was found on this instance.")
     return 0 if passed == 4 else 1
