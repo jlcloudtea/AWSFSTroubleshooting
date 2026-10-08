@@ -13,6 +13,11 @@ Description: >
 
 Parameters:
 
+  ValidationInstanceProfileArn:
+    Type: String
+    Default: ""
+    Description: Optional existing EC2 instance profile ARN permitting read-only EC2 and Auto Scaling Describe APIs. Required for functional checks.
+
   AvailabilityZone1:
     Description: Availability Zone for Public Subnet 1
     Type: AWS::EC2::AvailabilityZone::Name
@@ -44,6 +49,9 @@ Parameters:
 ######################
 # Resources
 ######################
+
+Conditions:
+  HasValidationProfile: !Not [!Equals [!Ref ValidationInstanceProfileArn, ""]]
 
 Resources:
 
@@ -165,6 +173,10 @@ Resources:
       LaunchTemplateName: !Sub "${AWS::StackName}-launch-for-troubleshooting"
 
       LaunchTemplateData:
+        IamInstanceProfile: !If
+          - HasValidationProfile
+          - Arn: !Ref ValidationInstanceProfileArn
+          - !Ref AWS::NoValue
 
         NetworkInterfaces:
           - DeviceIndex: 0
@@ -274,6 +286,42 @@ Resources:
               echo "READY" > /var/tmp/troubleshooting-lab-ready
 
               #
+              # Read-only validation dashboard (optional, non-blocking).
+              # Learner Lab must provide an existing EC2 instance profile with Describe permissions.
+              # Failures here do not mask the deliberately configured troubleshooting faults.
+              mkdir -p /opt/troubleshooting
+              if curl -fsSL --max-time 30 -o /opt/troubleshooting/validator.py https://raw.githubusercontent.com/jlcloudtea/AWSFSTroubleshooting/feature/self-validation-v1/validator/validator.py; then
+                yum install -y python3 python3-pip || true
+                python3 -m pip install boto3 || true
+                cat >/etc/systemd/system/troubleshooting-validator.service <<'UNIT'
+              [Unit]
+              Description=Read-only Troubleshooting Validator
+              After=network-online.target httpd.service
+              [Service]
+              Type=simple
+              User=ec2-user
+              Environment=AWS_REGION=${AWS::Region}
+              Environment=LAB_SECURITY_GROUP_ID=${InstanceSecurityGroup}
+              Environment=LAB_ROUTE_TABLE_ID=${PublicRouteTable}
+              Environment=LAB_IGW_ID=${InternetGateway}
+              Environment=LAB_ASG_NAME=${AWS::StackName}-AutoScalingGroup
+              Environment=LAB_SUBNET_IDS=${PublicSubnet1},${PublicSubnet2}
+              ExecStart=/usr/bin/python3 /opt/troubleshooting/validator.py
+              Restart=on-failure
+              RestartSec=3
+              [Install]
+              WantedBy=multi-user.target
+              UNIT
+                cat >/etc/httpd/conf.d/troubleshooting-validation.conf <<'APACHE'
+              ProxyPass /validation/ http://127.0.0.1:8765/validation/
+              ProxyPassReverse /validation/ http://127.0.0.1:8765/validation/
+              RedirectMatch 302 ^/validation$ /validation/
+              APACHE
+                systemctl daemon-reload
+                systemctl enable --now troubleshooting-validator || true
+                systemctl restart httpd || true
+              fi
+
               # trap sends SUCCESS signal here when script exits 0.
               #
 
@@ -299,6 +347,7 @@ Resources:
         Timeout: PT10M
 
     Properties:
+      AutoScalingGroupName: !Sub "${AWS::StackName}-AutoScalingGroup"
 
       # ---------------------------------------------------
       # INTENTIONAL TROUBLESHOOTING FAULT
