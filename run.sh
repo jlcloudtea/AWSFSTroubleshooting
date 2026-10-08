@@ -4,7 +4,7 @@ STACK_NAME="troubleshoot"
 TEMPLATE_FILE="TroubleshootingCLD401.yml"
 REQUIRED_REGION="us-east-1"
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-REPORT_TOKEN_FILE="$SCRIPT_DIR/.report-token"
+REPORT_TOKEN_FILE="$HOME/.troubleshoot-report-token"
 
 PS3='Please enter your choice or press 3 to quit: '
 
