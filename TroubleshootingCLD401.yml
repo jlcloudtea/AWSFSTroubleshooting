@@ -404,6 +404,30 @@ Resources:
         - !Ref PublicSubnet2
 
 
+  MorningScheduledAction:
+    Type: AWS::AutoScaling::ScheduledAction
+    Properties:
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      Recurrence: "0 9 * * *"
+      TimeZone: Australia/Adelaide
+      # INTENTIONAL FAULT: the daily 09:00 capacity is too low.
+      MinSize: 1
+      DesiredCapacity: 1
+      MaxSize: 2
+
+
+  MiddayScheduledAction:
+    Type: AWS::AutoScaling::ScheduledAction
+    Properties:
+      AutoScalingGroupName: !Ref AutoScalingGroup
+      Recurrence: "0 11 * * *"
+      TimeZone: Australia/Adelaide
+      # INTENTIONAL FAULT: the daily 11:00 capacity is too low.
+      MinSize: 1
+      DesiredCapacity: 1
+      MaxSize: 3
+
+
 ######################
 # Outputs
 ######################
