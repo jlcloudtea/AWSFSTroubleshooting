@@ -22,6 +22,9 @@
     .icon { font-size: 1.25rem; min-width: 1.4rem; }
     .pass { color: #157347; } .review { color: #a56513; }
     strong { display: block; }
+    #history { margin-top: 1.2rem; }
+    #history details { border-top: 1px solid #dce3ed; padding: .65rem 0; }
+    #history summary { cursor: pointer; }
     code { background: #eaf0f7; padding: .15rem .35rem; border-radius: 4px; }
     footer { color: #53647a; font-size: .83rem; margin-top: 1.4rem; }
   </style>
@@ -34,11 +37,12 @@
       <p class="online">✓ Web server reachable over HTTP</p>
       <h2 id="report-title">Assessment verification</h2>
       <div id="summary" class="pending" role="status">No verification report yet</div>
-      <p id="meta" class="meta">Run <code>bash run.sh</code> and choose 4) Verify (trial), then open its report link.</p>
+      <p id="meta" class="meta">Run <code>bash run.sh</code> and choose 4) Verify (trial). Reports appear here when HTTP access works.</p>
       <ol id="checks"></ol>
+      <div id="history"></div>
       <footer>
-        After opening a report link once, this browser keeps the last result when you refresh this page.
-        Run Verify again and open the new link to update it. This is practice feedback, not a grading record.
+        The page checks for new reports every 15 seconds. Reports are temporary and belong to this EC2 instance.
+        Option 4 is the primary feedback; this page is not a grading record.
       </footer>
     </section>
   </main>
@@ -63,51 +67,91 @@
       return report;
     }
 
-    function render() {
+    function stamp(report) {
+      const when = new Date(report.checkedAt);
+      return Number.isNaN(when.getTime()) ? report.checkedAt : when.toLocaleString();
+    }
+
+    function show(report) {
       const summary = document.getElementById("summary");
       const meta = document.getElementById("meta");
       const checks = document.getElementById("checks");
       checks.replaceChildren();
-      let token = location.hash.slice(1);
-      if (!token) {
-        try { token = localStorage.getItem(storageKey) || ""; } catch (_) {}
+      const passed = report.results.filter(item => item.passed).length;
+      summary.className = passed === 4 ? "success" : "pending";
+      summary.textContent = passed === 4 ? "Good Job. All 4 problems are resolved." : "NOT SUCCESS";
+      meta.textContent = "Last checked: " + stamp(report);
+      for (let i = 0; i < items.length; i++) {
+        const [, label] = items[i];
+        const ok = report.results[i].passed;
+        const row = document.createElement("li");
+        const icon = document.createElement("span");
+        icon.className = "icon " + (ok ? "pass" : "review");
+        icon.textContent = ok ? "✓" : "○";
+        icon.setAttribute("aria-hidden", "true");
+        const heading = document.createElement("strong");
+        heading.textContent = label + (ok ? " · SUCCESS" : " · NOT SUCCESS");
+        row.append(icon, heading);
+        checks.append(row);
       }
+    }
+
+    function valid(report) {
+      return report && report.version === 2 && typeof report.checkedAt === "string" &&
+        Array.isArray(report.results) && report.results.length === 4 &&
+        items.every(([id], i) => report.results[i].id === id &&
+          typeof report.results[i].passed === "boolean");
+    }
+
+    function renderHistory(reports) {
+      reports = reports.filter(valid).sort((a, b) => Date.parse(b.checkedAt) - Date.parse(a.checkedAt));
+      if (!reports.length) return;
+      show(reports[0]);
+      const history = document.getElementById("history");
+      history.replaceChildren();
+      if (reports.length < 2) return;
+      const title = document.createElement("h2");
+      title.textContent = "Earlier reports";
+      history.append(title);
+      for (const report of reports.slice(1)) {
+        const details = document.createElement("details");
+        const heading = document.createElement("summary");
+        heading.textContent = stamp(report) + " · " +
+          (report.results.every(item => item.passed) ? "Good Job" : "NOT SUCCESS");
+        const list = document.createElement("ol");
+        report.results.forEach((item, i) => {
+          const row = document.createElement("li");
+          row.textContent = items[i][1] + (item.passed ? " · SUCCESS" : " · NOT SUCCESS");
+          list.append(row);
+        });
+        details.append(heading, list);
+        history.append(details);
+      }
+    }
+
+    async function refresh() {
+      try {
+        const response = await fetch("/report.php", {cache: "no-store"});
+        if (!response.ok) return;
+        const reports = await response.json();
+        if (Array.isArray(reports) && reports.length) renderHistory(reports);
+      } catch (_) {}
+    }
+
+    // Old report links remain usable when this instance has no uploaded history.
+    function showLink() {
+      const token = location.hash.slice(1);
       if (!token) return;
       try {
         const report = decode(token);
-        if (location.hash) {
-          try { localStorage.setItem(storageKey, token); } catch (_) {}
-        }
-        const passed = report.results.filter(item => item.passed).length;
-        summary.className = passed === 4 ? "success" : "pending";
-        summary.textContent = passed === 4
-          ? "Good Job. All 4 problems are resolved."
-          : "NOT SUCCESS";
-        const when = new Date(report.checkedAt);
-        meta.textContent = "Last checked: " + (Number.isNaN(when.getTime()) ? report.checkedAt : when.toLocaleString());
-        for (let i = 0; i < items.length; i++) {
-          const [id, label] = items[i];
-          const ok = report.results[i].passed;
-          const row = document.createElement("li");
-          const icon = document.createElement("span");
-          icon.className = "icon " + (ok ? "pass" : "review");
-          icon.textContent = ok ? "✓" : "○";
-          icon.setAttribute("aria-hidden", "true");
-          const body = document.createElement("div");
-          const heading = document.createElement("strong");
-          heading.textContent = label + (ok ? " · SUCCESS" : " · NOT SUCCESS");
-          body.append(heading);
-          row.append(icon, body);
-          checks.append(row);
-        }
-      } catch (_) {
-        summary.className = "pending";
-        summary.textContent = "This report link is invalid";
-        meta.textContent = "Run Verify again and open the complete new link.";
-      }
+        localStorage.setItem(storageKey, token);
+        show(report);
+      } catch (_) {}
     }
-    render();
-    addEventListener("hashchange", render);
+    showLink();
+    refresh();
+    setInterval(refresh, 15000);
+    addEventListener("hashchange", () => { showLink(); refresh(); });
   </script>
 </body>
 </html>
