@@ -14,18 +14,18 @@ bash run.sh
 
 Choose **1** to create the environment. The startup commands and the original menu numbers 1–3 remain the same. Once creation completes, troubleshoot the environment in the AWS console.
 
-The EC2 instance serves a static assessment page at its public HTTP address. You can see the page once the route and security group have been repaired. To check the full solution and generate a report link, run `bash run.sh` again and choose **4) Verify (trial)**. The direct command still works:
+The EC2 instance serves an assessment page at its public HTTP address. You can see the page once the route and security group have been repaired. To check the full solution, run `bash run.sh` again and choose **4) Verify (trial)**. The direct command still works:
 
 ```bash
 python3 verify.py
 ```
 
-Open the complete URL printed by the verifier. The instance's home page shows four assessment items: Problem 1-1 Route table, Problem 1-2 Security group, Problem 2-1 Autoscaling options, and Problem 2-2 Schedule Policy. A live HTTP request is included in the web access check. Passing all four displays `Good Job.`; unfinished items show general review hints without exposing the wrong configuration.
+When web access works, option 4 uploads a snapshot to the first reachable instance and prints its home page URL. Refresh the page (or wait up to 15 seconds) to see the latest result and earlier reports in newest-first order. The home page shows four assessment items: Problem 1-1 Route table, Problem 1-2 Security group, Problem 2-1 Autoscaling options, and Problem 2-2 Schedule Policy. Passing all four displays `Good Job.`; unfinished items show only `NOT SUCCESS`.
 
-The link carries a snapshot of the terminal result in its fragment. Opening it once stores that result in the same browser, so refreshing the home page keeps the latest result seen there. Re-run option 4 and open its new link to update it. The terminal cannot change the public page for other browsers, and this is practice feedback rather than a secure grading record. If HTTP is still inaccessible, read the terminal hints first; the instance page cannot load until web access is restored.
+The verifier also prints a snapshot link as a fallback. If HTTP is still inaccessible, rely on the terminal results; the instance page cannot load until web access is restored. History is limited to the latest 50 reports on one EC2 instance and disappears if that instance is replaced. Different Auto Scaling instances have separate histories. This is practice feedback rather than a secure grading record.
 
 Create two recurring daily actions in the same time zone, **without end dates**: 09:00 sets Min 2 / Desired 3 / Max 4; 11:00 sets Min 1 / Desired 2 / Max 3. The verifier accepts an explicit time zone or AWS's default UTC. It checks configuration and the current capacities; a report obtained before 09:00 cannot prove tomorrow's action actually executed.
 
 Choose **2** in `bash run.sh` to delete the stack. Template changes do not update an already running EC2 instance automatically. Delete and recreate the test stack to try the lighter web server bootstrap and new home page.
 
-The site is static HTML. UserData installs Apache and CloudFormation helper scripts; PHP, MySQL, MariaDB, the external ZIP download, and archive tools are no longer needed for this assessment.
+UserData installs Apache, PHP and CloudFormation helper scripts. A PHP endpoint stores reports on the instance. MySQL, MariaDB, the external ZIP download, and archive tools are not needed. The stack gets a per-stack upload token from `run.sh`; keep the same `TRscript` directory to let option 4 publish reports. No new IAM role is required for this upload. The EC2 endpoint is plain HTTP, so the upload token and result history are appropriate only for this disposable practice lab.
