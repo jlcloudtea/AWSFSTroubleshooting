@@ -22,7 +22,6 @@
     .icon { font-size: 1.25rem; min-width: 1.4rem; }
     .pass { color: #157347; } .review { color: #a56513; }
     strong { display: block; }
-    .hint { display: block; color: #53647a; font-size: .94rem; margin-top: .2rem; }
     code { background: #eaf0f7; padding: .15rem .35rem; border-radius: 4px; }
     footer { color: #53647a; font-size: .83rem; margin-top: 1.4rem; }
   </style>
@@ -45,10 +44,10 @@
   </main>
   <script>
     const items = [
-      ["route", "Problem 1-1: Route table", "Review the public network path and try again."],
-      ["security", "Problem 1-2: Security group", "Review web access settings and try again."],
-      ["capacity", "Problem 2-1: Autoscaling options", "Compare the group settings with the task requirements."],
-      ["schedule", "Problem 2-2: Schedule Policy", "Review the timing and capacity requirements."]
+      ["route", "Problem 1-1: Route table"],
+      ["security", "Problem 1-2: Security group"],
+      ["capacity", "Problem 2-1: Autoscaling options"],
+      ["schedule", "Problem 2-2: Schedule Policy"]
     ];
     const storageKey = "erfys-troubleshooting-report-v2";
 
@@ -83,11 +82,11 @@
         summary.className = passed === 4 ? "success" : "pending";
         summary.textContent = passed === 4
           ? "Good Job. All 4 problems are resolved."
-          : passed + "/4 complete. Review the items below.";
+          : passed + "/4 successful.";
         const when = new Date(report.checkedAt);
         meta.textContent = "Last checked: " + (Number.isNaN(when.getTime()) ? report.checkedAt : when.toLocaleString());
         for (let i = 0; i < items.length; i++) {
-          const [id, label, hint] = items[i];
+          const [id, label] = items[i];
           const ok = report.results[i].passed;
           const row = document.createElement("li");
           const icon = document.createElement("span");
@@ -96,14 +95,8 @@
           icon.setAttribute("aria-hidden", "true");
           const body = document.createElement("div");
           const heading = document.createElement("strong");
-          heading.textContent = label + (ok ? " · Complete" : " · Check again");
+          heading.textContent = label + (ok ? " · SUCCESS" : " · NOT SUCCESS");
           body.append(heading);
-          if (!ok) {
-            const advice = document.createElement("span");
-            advice.className = "hint";
-            advice.textContent = hint;
-            body.append(advice);
-          }
           row.append(icon, body);
           checks.append(row);
         }
