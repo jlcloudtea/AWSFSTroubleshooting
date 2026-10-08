@@ -20,7 +20,9 @@ The EC2 instance serves a static assessment page at its public HTTP address. You
 python3 verify.py
 ```
 
-Open the complete URL printed by the verifier. It uses the instance's home page and displays all five checks: route, HTTP security group, daily schedule, current capacity, and live HTTP response. The link carries a snapshot of the terminal result in its fragment. Re-run the command for an updated result. This is practice feedback, not a secure grading record.
+Open the complete URL printed by the verifier. The instance's home page shows four assessment items: Problem 1-1 Route table, Problem 1-2 Security group, Problem 2-1 Autoscaling options, and Problem 2-2 Schedule Policy. A live HTTP request is included in the web access check. Passing all four displays `Good Job.`; unfinished items show general review hints without exposing the wrong configuration.
+
+The link carries a snapshot of the terminal result in its fragment. Opening it once stores that result in the same browser, so refreshing the home page keeps the latest result seen there. Re-run option 4 and open its new link to update it. The terminal cannot change the public page for other browsers, and this is practice feedback rather than a secure grading record. If HTTP is still inaccessible, read the terminal hints first; the instance page cannot load until web access is restored.
 
 Create two recurring daily actions in the same time zone, **without end dates**: 09:00 sets Min 2 / Desired 3 / Max 4; 11:00 sets Min 1 / Desired 2 / Max 3. The verifier accepts an explicit time zone or AWS's default UTC. It checks configuration and the current capacities; a report obtained before 09:00 cannot prove tomorrow's action actually executed.
 
