@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Troubleshooting verification</title>
+  <style>
+    :root { font: 16px/1.5 system-ui, sans-serif; color: #17233a; background: #f3f6fb; }
+    main { max-width: 760px; margin: 5vh auto; padding: 1rem; }
+    h1 { font-size: 2rem; margin-bottom: .3rem; }
+    .card { background: white; border-radius: 14px; padding: 1.4rem; box-shadow: 0 5px 25px #15274713; }
+    #summary { font-size: 1.35rem; font-weight: 700; padding: .8rem 1rem; border-radius: 9px; }
+    .success { background: #e2f7e9; color: #136a37; }
+    .pending { background: #fff1d6; color: #795117; }
+    ul { list-style: none; padding: 0; }
+    li { border-top: 1px solid #dce3ed; padding: .8rem 0; }
+    strong { display: block; }
+    .pass { color: #157347; } .fail { color: #b33136; }
+    small { color: #546477; }
+    code { background: #eaf0f7; padding: .15rem .35rem; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Troubleshooting verification</h1>
+    <p>Erfys Confectionary · AWS Cloud Fundamentals</p>
+    <div class="card">
+      <div id="summary" class="pending">No verification report yet</div>
+      <p id="time">Run <code>python3 verify.py</code> in the Learner Lab terminal, then open the report link it prints.</p>
+      <ul id="checks"></ul>
+      <small>This page displays the report produced by the terminal. It does not query AWS or serve as a secure grading record.</small>
+    </div>
+  </main>
+  <script>
+    function render() {
+      const summary = document.getElementById("summary");
+      const time = document.getElementById("time");
+      const checks = document.getElementById("checks");
+      checks.replaceChildren();
+      if (!location.hash.slice(1)) return;
+      try {
+        const token = location.hash.slice(1);
+        if (!/^[A-Za-z0-9_-]+$/.test(token) || token.length > 16000) throw Error("Invalid link");
+        const raw = atob(token.replace(/-/g, "+").replace(/_/g, "/"));
+        const bytes = Uint8Array.from(raw, ch => ch.charCodeAt(0));
+        const report = JSON.parse(new TextDecoder().decode(bytes));
+        if (report.version !== 1 || !Array.isArray(report.results) ||
+            report.results.length !== 5 || report.results.some(
+              item => typeof item.label !== "string" ||
+                typeof item.passed !== "boolean" || typeof item.detail !== "string"
+            )) throw Error("Invalid report");
+        const total = report.results.filter(item => item.passed).length;
+        summary.className = total === 5 ? "success" : "pending";
+        summary.textContent = total === 5 ? "All 5 checks passed" : total + "/5 checks passed";
+        time.textContent = "Stack: " + report.stack + " · Region: " + report.region +
+          " · Checked: " + new Date(report.checkedAt).toLocaleString();
+        for (const item of report.results) {
+          const row = document.createElement("li");
+          const heading = document.createElement("strong");
+          heading.className = item.passed ? "pass" : "fail";
+          heading.textContent = (item.passed ? "✓ " : "✗ ") + item.label;
+          const detail = document.createElement("span");
+          detail.textContent = item.detail;
+          row.append(heading, detail);
+          checks.append(row);
+        }
+      } catch (_) {
+        summary.className = "pending";
+        summary.textContent = "This report link is invalid";
+        time.textContent = "Run python3 verify.py again and use its complete link.";
+      }
+    }
+    render();
+    addEventListener("hashchange", render);
+  </script>
+</body>
+</html>
