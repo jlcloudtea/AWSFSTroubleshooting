@@ -27,7 +27,6 @@ def aws(*args):
 
 def record(label, passed, detail):
     results.append({"label": label, "passed": bool(passed), "detail": detail})
-    print(f"{'PASS' if passed else 'FAIL'}  {label}: {detail}")
 
 
 def resource(logical_id):
@@ -154,12 +153,40 @@ def main():
     else:
         record("Public HTTP response", False, "No in-service instance with a public IP was found")
 
-    passed = sum(r["passed"] for r in results)
-    print(f"\nResult: {passed}/{len(results)} checks passed.")
+    checks = [
+        {"id": "route", "label": "Problem 1-1: Route table",
+         "passed": results[0]["passed"],
+         "hint": "Review the public network path and try again."},
+        {"id": "security", "label": "Problem 1-2: Security group",
+         "passed": results[1]["passed"] and results[4]["passed"],
+         "hint": "Review web access settings and try again."},
+        {"id": "capacity", "label": "Problem 2-1: Autoscaling options",
+         "passed": results[3]["passed"],
+         "hint": "Compare the group settings with the task requirements."},
+        {"id": "schedule", "label": "Problem 2-2: Schedule Policy",
+         "passed": results[2]["passed"],
+         "hint": "Review the timing and capacity requirements."},
+    ]
+    passed = sum(item["passed"] for item in checks)
+    for item in checks:
+        print(f"{'PASS' if item['passed'] else 'CHECK'}  {item['label']}")
+        if not item["passed"]:
+            print(f"       {item['hint']}")
+    print(f"\n{'Good Job.' if passed == 4 else 'Keep going. Review the items marked CHECK.'}")
+    print(f"Result: {passed}/4")
     if public_ip and report_path:
-        payload = {"version": 1, "stack": STACK, "region": REGION,
+        payload = {"version": 2, "stack": STACK, "region": REGION,
                    "checkedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
-                   "results": results}
+                   "results": [{"id": item["id"], "passed": item["passed"]}
+                               for item in checks]}
+        if report_path == "/verification.html":
+            # The previously deployed page expects five version-1 rows.
+            payload["version"] = 1
+            payload["results"] = [
+                {"label": row["label"], "passed": row["passed"],
+                 "detail": "Check complete" if row["passed"] else "Review this section"}
+                for row in results
+            ]
         token = base64.urlsafe_b64encode(
             json.dumps(payload, separators=(",", ":")).encode()
         ).decode().rstrip("=")
@@ -168,7 +195,7 @@ def main():
         print("This is feedback for practice, not a tamper-proof grading record.")
     elif public_ip:
         print("\nThe web server responded, but no verification page was found on this instance.")
-    return 0 if passed == len(results) else 1
+    return 0 if passed == 4 else 1
 
 
 if __name__ == "__main__":
