@@ -50,7 +50,8 @@ def schedule_matches(action, hour, sizes):
     recurrence = action.get("Recurrence", "")
     return (recurrence.split() == ["0", str(hour), "*", "*", "*"]
             and (action.get("MinSize"), action.get("DesiredCapacity"),
-                 action.get("MaxSize")) == sizes)
+                 action.get("MaxSize")) == sizes
+            and not action.get("EndTime"))
 
 
 def main():
@@ -99,8 +100,8 @@ def main():
                          (evening[0].get("TimeZone") or "UTC"))
         zone = (morning[0].get("TimeZone") or "UTC") if same_zone else "UTC"
         record("Daily 09:00–11:00 schedule", same_zone,
-               f"09:00 → 2/3/4 and 11:00 → 1/2/3 ({zone})" if same_zone
-               else "Expected two daily actions at 09:00 and 11:00 with the same time zone")
+               f"09:00 → 2/3/4 and 11:00 → 1/2/3 ({zone}); no end dates" if same_zone
+               else "Expected two daily actions at 09:00 and 11:00 with the same time zone and no end dates")
 
         try:
             hour = dt.datetime.now(ZoneInfo(zone)).hour
