@@ -214,64 +214,17 @@ Resources:
               trap signal_status EXIT
 
               #
-              # Install CloudFormation helper scripts.
-              #
-              yum install -y aws-cfn-bootstrap
+              # Install only the helper scripts and HTTP server needed for this lab.
+              yum install -y aws-cfn-bootstrap httpd
 
-              #
-              # Install web server and application dependencies.
-              #
-              yum install -y \
-                httpd \
-                php \
-                mysql \
-                php-mysql \
-                wget \
-                unzip
-
-              #
-              # Install the required PHP environment.
-              #
-              amazon-linux-extras install -y \
-                lamp-mariadb10.2-php7.2 \
-                php7.2
-
-              yum install -y \
-                httpd \
-                mariadb-server
-
-              #
-              # Enable and start Apache.
-              #
-              systemctl enable httpd
-              systemctl start httpd
-
-              #
-              # Install the training web application.
-              #
-              cd /var/www/html
-
-              wget \
-                --tries=5 \
-                --timeout=20 \
-                https://aws-tc-largeobjects.s3.amazonaws.com/CUR-TF-100-ACCLFO-2/lab5-rds/lab-app-php7.zip
-
-              unzip -o \
-                lab-app-php7.zip \
-                -d /var/www/html/
-
-              chown apache:root \
-                /var/www/html/rds.conf.php
-
-              #
-              # Publish the local verification report viewer.
-              cat > /var/www/html/verification.html <<'VERIFICATION_HTML'
+              # The default page doubles as the verification report viewer.
+              cat > /var/www/html/index.html <<'VERIFICATION_HTML'
               <!doctype html>
               <html lang="en">
               <head>
                 <meta charset="utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1">
-                <title>Troubleshooting verification</title>
+                <title>Erfys Confectionary · Troubleshooting lab</title>
                 <style>
                   :root { font: 16px/1.5 system-ui, sans-serif; color: #17233a; background: #f3f6fb; }
                   main { max-width: 760px; margin: 5vh auto; padding: 1rem; }
@@ -290,9 +243,11 @@ Resources:
               </head>
               <body>
                 <main>
-                  <h1>Troubleshooting verification</h1>
-                  <p>Erfys Confectionary · AWS Cloud Fundamentals</p>
+                  <h1>Erfys Confectionary</h1>
+                  <p>AWS Cloud Fundamentals · Troubleshooting lab</p>
                   <div class="card">
+                    <p class="pass"><strong>Web server reachable over HTTP</strong></p>
+                    <h2>Assessment verification</h2>
                     <div id="summary" class="pending">No verification report yet</div>
                     <p id="time">Run <code>python3 verify.py</code> in the Learner Lab terminal, then open the report link it prints.</p>
                     <ul id="checks"></ul>
@@ -344,6 +299,10 @@ Resources:
               </body>
               </html>
               VERIFICATION_HTML
+              cp /var/www/html/index.html /var/www/html/verification.html
+
+              systemctl enable --now httpd
+              curl --fail --silent --show-error --max-time 5 http://127.0.0.1/ >/dev/null
 
               # Verify Apache is actually running.
               #
