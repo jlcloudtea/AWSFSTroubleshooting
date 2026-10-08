@@ -1,6 +1,6 @@
 # AWSFSTroubleshooting
 
-AWS Cloud Fundamentals troubleshooting exercise in `us-east-1`. Students repair the public route, HTTP security group, Auto Scaling capacity, and daily scheduled actions.
+AWS Cloud Fundamentals troubleshooting exercise in `us-east-1`. Students repair the public route, HTTP security group, Auto Scaling capacity, and two preconfigured daily scheduled actions.
 
 ## Start the lab
 
@@ -24,7 +24,7 @@ Open the complete URL printed by the verifier. The instance's home page shows fo
 
 The link carries a snapshot of the terminal result in its fragment. Opening it once stores that result in the same browser, so refreshing the home page keeps the latest result seen there. Re-run option 4 and open its new link to update it. The terminal cannot change the public page for other browsers. This is feedback on current work, not a grading record. If HTTP is still inaccessible, use the terminal result; the instance page cannot load until web access is restored.
 
-Create two recurring daily actions in the same time zone, **without end dates**: 09:00 sets Min 2 / Desired 3 / Max 4; 11:00 sets Min 1 / Desired 2 / Max 3. The verifier accepts an explicit time zone or AWS's default UTC. It checks configuration and the current capacities; a report obtained before 09:00 cannot prove tomorrow's action actually executed.
+Correct the two existing recurring daily actions in the same time zone, **without end dates**: 09:00 sets Min 2 / Desired 3 / Max 4; 11:00 sets Min 1 / Desired 2 / Max 3. The template initially sets these actions to 1 / 1 / 2 and 1 / 1 / 3, respectively, in Australia/Adelaide. The verifier requires exactly two actions and accepts an explicit time zone or AWS's default UTC. It checks configuration and the current capacities; a report obtained before 09:00 cannot prove tomorrow's action actually executed.
 
 Choose **2** in `bash run.sh` to delete the stack. Template changes do not update an already running EC2 instance automatically. Delete and recreate the stack to use a revised template or home page.
 
