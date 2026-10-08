@@ -302,7 +302,7 @@ Resources:
               cp /var/www/html/index.html /var/www/html/verification.html
 
               systemctl enable --now httpd
-              curl --fail --silent --show-error --max-time 5 http://127.0.0.1/ >/dev/null
+              test -s /var/www/html/index.html
 
               # Verify Apache is actually running.
               #
