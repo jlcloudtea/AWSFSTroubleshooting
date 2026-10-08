@@ -148,8 +148,8 @@ def main():
         token = base64.urlsafe_b64encode(
             json.dumps(payload, separators=(",", ":")).encode()
         ).decode().rstrip("=")
-        print("\nOpen the report page after HTTP access works:")
-        print(f"http://{public_ip}/verification.html#{token}")
+        print("\nOpen the web page with this report link after HTTP access works:")
+        print(f"http://{public_ip}/#{token}")
         print("This is feedback for practice, not a tamper-proof grading record.")
     return 0 if passed == len(results) else 1
 
