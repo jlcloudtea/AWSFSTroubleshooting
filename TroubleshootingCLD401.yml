@@ -238,11 +238,16 @@ Resources:
                   .success { background: #e2f7e9; color: #136a37; }
                   .pending { background: #fff1d6; color: #795117; }
                   .meta { color: #53647a; font-size: .9rem; }
+                  .steps { margin: 1.2rem 0 1.5rem; padding: 1rem; background: #f3f6fb; border-radius: 10px; }
+                  .steps h2 { margin-bottom: .5rem; }
+                  .steps ol { list-style: decimal; padding-left: 1.4rem; margin: 0; }
+                  .steps li { display: list-item; border: 0; padding: .25rem 0; }
                   ol { list-style: none; padding: 0; margin: .8rem 0; }
                   li { display: flex; gap: .8rem; border-top: 1px solid #dce3ed; padding: .85rem 0; }
                   .icon { font-size: 1.25rem; min-width: 1.4rem; }
                   .pass { color: #157347; } .review { color: #a56513; }
                   strong { display: block; }
+                  .steps strong { display: inline; }
                   code { background: #eaf0f7; padding: .15rem .35rem; border-radius: 4px; }
                   footer { color: #53647a; font-size: .83rem; margin-top: 1.4rem; }
                 </style>
@@ -253,13 +258,21 @@ Resources:
                   <p class="subtitle">AWS Cloud Fundamentals · Troubleshooting lab</p>
                   <section class="card" aria-labelledby="report-title">
                     <p class="online">✓ Web server reachable over HTTP</p>
-                    <h2 id="report-title">Assessment verification</h2>
+                    <section class="steps" aria-labelledby="steps-title">
+                      <h2 id="steps-title">Check your answers</h2>
+                      <ol>
+                        <li>In the Learner Lab terminal, go to the <code>TRscript</code> directory.</li>
+                        <li>Run <code>bash run.sh</code> and choose <strong>4) Verify (trial)</strong>.</li>
+                        <li>Read the results in the terminal. Open the complete report link it prints to show them here.</li>
+                      </ol>
+                    </section>
+                    <h2 id="report-title">Your latest report</h2>
                     <div id="summary" class="pending" role="status">No verification report yet</div>
-                    <p id="meta" class="meta">Run <code>bash run.sh</code> and choose 4) Verify (trial), then open its report link.</p>
+                    <p id="meta" class="meta">Follow the steps above to display a report.</p>
                     <ol id="checks"></ol>
                     <footer>
-                      After opening a report link once, this browser keeps the last result when you refresh this page.
-                      Run Verify again and open the new link to update it. This is practice feedback, not a grading record.
+                      This browser keeps the last report you opened when you refresh. To update it, run option 4 again
+                      and open the new link. This is practice feedback, not a grading record.
                     </footer>
                   </section>
                 </main>
