@@ -1,25 +1,10 @@
 # AWSFSTroubleshooting
 
-This troubleshooting cloudformation yml file is created for cloud foundamental subject.
-The student need to tourlbeshoot EC2, Network and Autoscaling issues in zone us-east-1.
-You need to run it in your AWS CLI enviroment in academy website. 
+AWS Cloud Fundamentals troubleshooting exercise in `us-east-1`. Students repair the public route, HTTP security group, Auto Scaling capacity, and daily scheduled actions.
 
-Target: Fix the web access to the Public IP address and autoscaling issues.
+## Test branch
 
-Download the script and run in bash envoriment.
-
-git clone https://github.com/jlcloudtea/AWSFSTroubleshooting TRscript
-
-cd TRscript
-
-bash run.sh
-
-Then follow the prompt message to create, delete the AWS cloudfomration enviroment. 
-
-
-## Verification page (test branch)
-
-The existing create/delete menu is unchanged. To test this branch in a fresh Learner Lab:
+In a fresh Learner Lab terminal:
 
 ```bash
 git clone -b feature/troubleshooting-verification-page https://github.com/jlcloudtea/AWSFSTroubleshooting TRscript
@@ -27,14 +12,18 @@ cd TRscript
 bash run.sh
 ```
 
-Choose **1** to create the environment. After completing the troubleshooting in the AWS console, run:
+Choose **1** to create the environment. The menu and startup commands have not changed. Once creation completes, troubleshoot the environment in the AWS console.
+
+The EC2 instance serves a static assessment page at its public HTTP address. You can see the page once the route and security group have been repaired. To check the full solution and generate a report link, run from `TRscript`:
 
 ```bash
 python3 verify.py
 ```
 
-The script reads the current stack and prints five checks: the public route, HTTP security group, daily scheduled actions, current Auto Scaling capacity, and a live HTTP response. It prints a report URL for an in-service instance with a public IP. Open that complete URL in a browser to see the results on the lab web server. If the public route or HTTP security group is still wrong, the report page may not load yet; use the terminal results to continue troubleshooting, then rerun the script.
+Open the complete URL printed by the verifier. It uses the instance's home page and displays all five checks: route, HTTP security group, daily schedule, current capacity, and live HTTP response. The link carries a snapshot of the terminal result in its fragment. Re-run the command for an updated result. This is practice feedback, not a secure grading record.
 
-The assessment's daily 09:00 and 11:00 actions should use the same time zone. The script accepts an explicitly selected time zone or AWS's default UTC; it checks the current group capacity against the active window. A daily 11:00 return action is required. The script only reads AWS settings and never repairs them. The link contains the report data in its fragment, which is processed locally by the browser. This is student feedback, not a secure grading record.
+Create two recurring daily actions in the same time zone, **without end dates**: 09:00 sets Min 2 / Desired 3 / Max 4; 11:00 sets Min 1 / Desired 2 / Max 3. The verifier accepts an explicit time zone or AWS's default UTC. It checks configuration and the current capacities; a report obtained before 09:00 cannot prove tomorrow's action actually executed.
 
-The original `bash run.sh` menu still offers **2** to delete the environment.
+Choose **2** in `bash run.sh` to delete the stack. Template changes do not update an already running EC2 instance automatically. Delete and recreate the test stack to try the lighter web server bootstrap and new home page.
+
+The site is static HTML. UserData installs Apache and CloudFormation helper scripts; PHP, MySQL, MariaDB, the external ZIP download, and archive tools are no longer needed for this assessment.
