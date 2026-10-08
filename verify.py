@@ -4,8 +4,6 @@
 import base64
 import datetime as dt
 import json
-import os
-from pathlib import Path
 import subprocess
 import sys
 import urllib.error
@@ -175,23 +173,6 @@ def main():
                    "checkedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
                    "results": [{"id": item["id"], "passed": item["passed"]}
                                for item in checks]}
-        if report_path == "/":
-            token_file = Path(os.path.expanduser("~/.troubleshoot-report-token"))
-            if token_file.is_file():
-                try:
-                    request = urllib.request.Request(
-                        f"http://{public_ip}/report.php",
-                        data=json.dumps(payload).encode("utf-8"),
-                        headers={"Content-Type": "application/json",
-                                 "X-Report-Token": token_file.read_text().strip()},
-                        method="POST",
-                    )
-                    with urllib.request.urlopen(request, timeout=5) as response:
-                        if response.status != 200:
-                            raise RuntimeError(f"HTTP {response.status}")
-                    print(f"Report saved on http://{public_ip}/ — refresh the page to see it.")
-                except (urllib.error.URLError, OSError, RuntimeError) as error:
-                    print(f"Could not update the web page: {error}")
         if report_path == "/verification.html":
             # The previously deployed page expects five version-1 rows.
             payload["version"] = 1
