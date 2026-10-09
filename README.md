@@ -1,10 +1,10 @@
 # AWSFSTroubleshooting
 
-AWS Cloud Fundamentals troubleshooting exercise in `us-east-1`. Students repair the public route, HTTP security group, Auto Scaling capacity, and two preconfigured daily scheduled actions.
+This repository sets up an AWS Cloud Fundamentals troubleshooting lab in AWS Academy Learner Lab. Use your assessment brief for the task requirements.
 
 ## Start the lab
 
-In a fresh Learner Lab terminal:
+Start Learner Lab, open its terminal, and run:
 
 ```bash
 git clone https://github.com/jlcloudtea/AWSFSTroubleshooting TRscript
@@ -12,20 +12,20 @@ cd TRscript
 bash run.sh
 ```
 
-Choose **1** to create the environment. Once creation completes, troubleshoot the environment in the AWS console.
+Choose **1) Create Troubleshooting Stack**. Wait until the script reports that the environment is ready, then use the AWS console to complete your troubleshooting task.
 
-The EC2 instance serves a static assessment page at its public HTTP address. You can see the page once the route and security group have been repaired. To check the full solution and generate a report link, run `bash run.sh` again and choose **4) Verify (trial)**. The direct command still works:
+## Check your work
+
+In the `TRscript` directory, run:
 
 ```bash
-python3 verify.py
+bash run.sh
 ```
 
-Open the complete URL printed by the verifier. The instance's home page shows four assessment items: Problem 1-1 Route table, Problem 1-2 Security group, Problem 2-1 Autoscaling options, and Problem 2-2 Schedule Policy. A live HTTP request is included in the web access check. Passing all four displays `Good Job.`; unfinished items show `NOT SUCCESS` without exposing the wrong configuration.
+Choose **4) Verify (trial)**. Review the results in the terminal. When the web page is accessible, open the complete report link printed by the script to view the same feedback there.
 
-The link carries a snapshot of the terminal result in its fragment. Opening it once stores that result in the same browser, so refreshing the home page keeps the latest result seen there. Re-run option 4 and open its new link to update it. The terminal cannot change the public page for other browsers. This is feedback on current work, not a grading record. If HTTP is still inaccessible, use the terminal result; the instance page cannot load until web access is restored.
+You can run option 4 again after making changes. Open the new report link to update the page. The feedback reflects your current work; it is not a grading record.
 
-Correct the two existing recurring daily actions in the same time zone, **without end dates**: 09:00 sets Min 2 / Desired 3 / Max 4; 11:00 sets Min 1 / Desired 2 / Max 3. The template initially sets these actions to 1 / 1 / 2 and 1 / 1 / 3, respectively, in Australia/Adelaide. The verifier requires exactly two actions and accepts an explicit time zone or AWS's default UTC. It checks configuration and current capacity. During the 09:00–11:00 window it accepts either the baseline 1 / 2 / 3 or active 2 / 3 / 4, because correcting a schedule after 09:00 does not trigger that morning's action retroactively. This configuration check does not prove a future scheduled action actually executed.
+## Delete the lab
 
-Choose **2** in `bash run.sh` to delete the stack. Template changes do not update an already running EC2 instance automatically. Delete and recreate the stack to use a revised template or home page.
-
-The site is static HTML. UserData installs Apache and CloudFormation helper scripts; PHP, MySQL, MariaDB, the external ZIP download, and archive tools are no longer needed for this assessment.
+When you have finished, run `bash run.sh` and choose **2) Delete Troubleshooting Stack**. Wait for the deletion to complete before ending Learner Lab.
