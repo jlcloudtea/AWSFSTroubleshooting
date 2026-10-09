@@ -64,6 +64,7 @@ def main():
         return 2
 
     public_ip = None
+    public_ips = []
     report_path = None
     try:
         routes = aws("ec2", "describe-route-tables", "--route-table-ids", route_table)
@@ -95,63 +96,77 @@ def main():
                         "--auto-scaling-group-name", asg_name)["ScheduledUpdateGroupActions"]
         morning = [a for a in scheduled if schedule_matches(a, 9, (2, 3, 4))]
         evening = [a for a in scheduled if schedule_matches(a, 11, (1, 2, 3))]
-        same_zone = bool(morning and evening and
+        # Additional actions could override a correct pair later in the day.
+        same_zone = bool(len(scheduled) == 2 and len(morning) == 1 and len(evening) == 1 and
                          (morning[0].get("TimeZone") or "UTC") ==
                          (evening[0].get("TimeZone") or "UTC"))
         zone = (morning[0].get("TimeZone") or "UTC") if same_zone else "UTC"
         record("Daily 09:00–11:00 schedule", same_zone,
                f"09:00 → 2/3/4 and 11:00 → 1/2/3 ({zone}); no end dates" if same_zone
-               else "Expected two daily actions at 09:00 and 11:00 with the same time zone and no end dates")
+               else "Expected exactly two daily actions at 09:00 and 11:00 with the same time zone and no end dates")
 
         try:
             hour = dt.datetime.now(ZoneInfo(zone)).hour
         except (KeyError, ValueError):
             hour = dt.datetime.now(dt.timezone.utc).hour
-        expected = (2, 3, 4) if same_zone and 9 <= hour < 11 else (1, 2, 3)
+        # A schedule corrected after 09:00 will not retroactively run today.
+        # During the window, accept either the repaired baseline or the active capacity.
+        expected = {(1, 2, 3)}
+        if same_zone and 9 <= hour < 11:
+            expected.add((2, 3, 4))
         actual = (group["MinSize"], group["DesiredCapacity"], group["MaxSize"])
-        record("Auto Scaling capacity", actual == expected,
+        expected_text = " or ".join("/".join(map(str, size)) for size in sorted(expected))
+        record("Auto Scaling capacity", actual in expected,
                f"Current min/desired/max: {actual[0]}/{actual[1]}/{actual[2]}; "
-               f"expected {expected[0]}/{expected[1]}/{expected[2]}")
+               f"expected {expected_text}")
 
         instance_ids = [i["InstanceId"] for i in group["Instances"]
                         if i.get("LifecycleState") == "InService"]
         if instance_ids:
             instances = aws("ec2", "describe-instances", "--instance-ids", *instance_ids)
-            for reservation in instances["Reservations"]:
-                for instance in reservation["Instances"]:
-                    if instance.get("PublicIpAddress"):
-                        public_ip = instance["PublicIpAddress"]
-                        break
-                if public_ip:
-                    break
+            public_ips = [ip for _, _, ip in sorted(
+                (instance.get("LaunchTime", ""), instance["InstanceId"],
+                 instance["PublicIpAddress"])
+                for reservation in instances["Reservations"]
+                for instance in reservation["Instances"]
+                if instance.get("PublicIpAddress")
+            )]
     except (RuntimeError, KeyError, IndexError, subprocess.TimeoutExpired) as error:
         record("Daily 09:00–11:00 schedule", False, f"Could not inspect actions: {error}")
         record("Auto Scaling capacity", False, "Could not inspect group capacity")
 
-    if public_ip:
+    # A newly scaled-out instance can appear before its web page is ready.
+    # Try every InService public instance and prefer one hosting the report page.
+    http_ip = None
+    for candidate in public_ips:
         try:
-            with urllib.request.urlopen(f"http://{public_ip}/", timeout=5) as response:
-                reachable = 200 <= response.status < 400
+            with urllib.request.urlopen(f"http://{candidate}/", timeout=5) as response:
                 status = response.status
                 homepage = response.read(65536).decode("utf-8", errors="replace")
-            record("Public HTTP response", reachable, f"http://{public_ip}/ returned HTTP {status}")
-            if reachable:
-                if 'id="summary"' in homepage:
-                    report_path = "/"
-                else:
-                    try:
-                        with urllib.request.urlopen(
-                            f"http://{public_ip}/verification.html", timeout=5
-                        ) as response:
-                            alternate = response.read(65536).decode("utf-8", errors="replace")
-                            if 200 <= response.status < 400 and 'id="summary"' in alternate:
-                                report_path = "/verification.html"
-                    except (urllib.error.URLError, TimeoutError, OSError):
-                        pass
-        except (urllib.error.URLError, TimeoutError, OSError) as error:
-            record("Public HTTP response", False, f"Could not load http://{public_ip}/: {error}")
-    else:
-        record("Public HTTP response", False, "No in-service instance with a public IP was found")
+            if not 200 <= status < 400:
+                continue
+            if http_ip is None:
+                http_ip = candidate
+            if 'id="summary"' in homepage:
+                public_ip, report_path = candidate, "/"
+                break
+            try:
+                with urllib.request.urlopen(
+                    f"http://{candidate}/verification.html", timeout=5
+                ) as response:
+                    alternate = response.read(65536).decode("utf-8", errors="replace")
+                    if 200 <= response.status < 400 and 'id="summary"' in alternate:
+                        public_ip, report_path = candidate, "/verification.html"
+                        break
+            except (urllib.error.URLError, TimeoutError, OSError):
+                pass
+        except (urllib.error.URLError, TimeoutError, OSError):
+            continue
+    if public_ip is None:
+        public_ip = http_ip or (public_ips[0] if public_ips else None)
+    record("Public HTTP response", http_ip is not None,
+           f"http://{http_ip}/ returned HTTP success" if http_ip
+           else "No in-service public instance returned a successful HTTP response")
 
     checks = [
         {"id": "route", "label": "Problem 1-1: Route table",
@@ -186,9 +201,9 @@ def main():
         ).decode().rstrip("=")
         print("\nOpen the web page with this report link after HTTP access works:")
         print(f"http://{public_ip}{report_path}#{token}")
-        print("This is feedback for practice, not a tamper-proof grading record.")
-    elif public_ip:
-        print("\nThe web server responded, but no verification page was found on this instance.")
+        print("This is feedback on your current work, not a grading record.")
+    elif http_ip:
+        print("\nHTTP responded, but no verification page was found on an available instance.")
     return 0 if passed == 4 else 1
 
 
